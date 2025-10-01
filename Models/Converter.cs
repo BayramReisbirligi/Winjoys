@@ -1,10 +1,19 @@
 ﻿using ReisProduction.Winjoys.Utilities.Enums;
-using Windows.System;
+using System.Runtime.InteropServices;
 using System.Text;
+using Windows.System;
 namespace ReisProduction.Winjoys.Models;
 public static partial class InputInjector
 {
-    public static VirtualKey ToKey(this InputType input) =>
+    [DllImport("user32.dll")]
+    static extern uint MapVirtualKey(uint uCode, uint uMapType);
+
+    const uint MAPVK_VK_TO_VSC = 0;   // VirtualKey -> ScanCode
+    const uint MAPVK_VSC_TO_VK = 1;   // ScanCode   -> VirtualKey
+
+    public static WinRTKeys ToWinRTKey(this VirtualKey key) => (WinRTKeys)(ushort)MapVirtualKey((uint)key, MAPVK_VK_TO_VSC);
+    public static VirtualKey ToVirtualKey(this WinRTKeys scan) => (VirtualKey)MapVirtualKey((uint)scan, MAPVK_VSC_TO_VK);
+    public static VirtualKey ToVirtualKey(this InputType input) =>
     input switch
     {
         InputType.LeftButton => VirtualKey.LeftButton,
@@ -529,7 +538,7 @@ public static partial class InputInjector
                 }
         return [.. keys];
     }
-    public static string ToSentence(VirtualKey[] keys)
+    public static string ToSentence(this VirtualKey[] keys)
     {
         bool capsLockState = false;
         bool shiftActive;
