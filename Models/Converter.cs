@@ -1,18 +1,13 @@
-﻿using ReisProduction.Winjoys.Utilities.Enums;
-using System.Runtime.InteropServices;
-using System.Text;
+﻿using static ReisProduction.Winjoys.Utilities.Constants;
+using static ReisProduction.Winjoys.Services.Interop;
+using ReisProduction.Winjoys.Utilities.Enums;
 using Windows.System;
+using System.Text;
 namespace ReisProduction.Winjoys.Models;
 public static partial class InputInjector
 {
-    [DllImport("user32.dll")]
-    static extern uint MapVirtualKey(uint uCode, uint uMapType);
-
-    const uint MAPVK_VK_TO_VSC = 0;   // VirtualKey -> ScanCode
-    const uint MAPVK_VSC_TO_VK = 1;   // ScanCode   -> VirtualKey
-
-    public static WinRTKeys ToWinRTKey(this VirtualKey key) => (WinRTKeys)(ushort)MapVirtualKey((uint)key, MAPVK_VK_TO_VSC);
-    public static VirtualKey ToVirtualKey(this WinRTKeys scan) => (VirtualKey)MapVirtualKey((uint)scan, MAPVK_VSC_TO_VK);
+    public static WinRTKey ToWinRTKey(this VirtualKey key) => (WinRTKey)(ushort)MapVirtualKey((uint)key, MAPVK_VK_TO_WK);
+    public static VirtualKey ToVirtualKey(this WinRTKey scan) => (VirtualKey)MapVirtualKey((uint)scan, MAPVK_WK_TO_VK);
     public static VirtualKey ToVirtualKey(this InputType input) =>
     input switch
     {
@@ -211,6 +206,7 @@ public static partial class InputInjector
         InputType.MouseNavigateToXYSmooth => MoveType.MouseNavigateToXYSmooth,
         _ => MoveType.None
     };
+    public static InputType ToInput(this WinRTKey key) => ToInput(key.ToVirtualKey());
     public static InputType ToInput(this VirtualKey key) => key switch
     {
         VirtualKey.LeftButton => InputType.LeftButton,
@@ -408,6 +404,7 @@ public static partial class InputInjector
         MoveType.MouseNavigateToXYSmooth => InputType.MouseNavigateToXYSmooth,
         _ => InputType.None
     };
+    public static string ToKeyString(this WinRTKey key) => ToKeyString(key.ToVirtualKey());
     public static string ToKeyString(this VirtualKey key) => key switch
     {
         VirtualKey.Back => "{BACKSPACE}",
@@ -501,7 +498,8 @@ public static partial class InputInjector
         VirtualKey.LeftMenu or VirtualKey.RightMenu or VirtualKey.Menu => "%",
         _ => ""
     };
-    public static VirtualKey[] ToKeys(string sentence)
+    public static WinRTKey[] ToWinRTKeys(string sentence) => [.. ToVirtualKeys(sentence).Select(k => k.ToWinRTKey())];
+    public static VirtualKey[] ToVirtualKeys(string sentence)
     {
         List<VirtualKey> keys = [];
         foreach (char c in sentence)
@@ -538,6 +536,7 @@ public static partial class InputInjector
                 }
         return [.. keys];
     }
+    public static string ToSentence(this WinRTKey[] keys) => ToSentence(keys.Select(k => k.ToVirtualKey()).ToArray());
     public static string ToSentence(this VirtualKey[] keys)
     {
         bool capsLockState = false;
@@ -571,6 +570,7 @@ public static partial class InputInjector
         }
         return sb.ToString();
     }
+    public static char? ToChar(this WinRTKey key) => ToChar(key.ToVirtualKey());
     public static char? ToChar(this VirtualKey key)
     {
         if (key >= VirtualKey.A && key <= VirtualKey.Z)

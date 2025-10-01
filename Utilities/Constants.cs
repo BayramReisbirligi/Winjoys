@@ -2,6 +2,8 @@
 internal class Constants
 {
     internal const int
+        MAPVK_VK_TO_WK = 0,
+        MAPVK_WK_TO_VK = 1,
         SW_SHOW = 5,
         WM_KEYDOWN = 0x0100,
         WM_KEYUP = 0x0101,

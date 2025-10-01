@@ -1,6 +1,5 @@
 ﻿namespace ReisProduction.Winjoys.Utilities.Enums;
-
-public enum WinRTKeys : ushort
+public enum WinRTKey : ushort
 {
     Escape = 0x01,
     Number1 = 0x02,

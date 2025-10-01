@@ -1,17 +1,20 @@
-﻿using ReisProduction.Winjoys.Utilities.Structs;
-using System.ComponentModel;
+﻿using static ReisProduction.Winjoys.Utilities.Constants;
+using ReisProduction.Winjoys.Utilities.Structs;
 using System.Runtime.InteropServices;
-using static ReisProduction.Winjoys.Utilities.Constants;
+using ReisProduction.Winjoys.Models;
+using System.ComponentModel;
 namespace ReisProduction.Winjoys.Services;
 public static class Interop
 {
-    public static void BringToFrontNameOrHwnd(nint hWnd = 0, string? windowTitle = null)
+    public static void BringToFrontNameOrHwnd(nint hWnd = 0, string windowTitle = "")
     {
+        if (!InputInjector.BringToFrontWindow && hWnd is 0 &&
+            string.IsNullOrWhiteSpace(windowTitle)) return;
         if (hWnd is 0)
             if (string.IsNullOrWhiteSpace(windowTitle))
                 throw new ArgumentException("Window title cannot be null or empty when hWnd is 0.");
             else
-                hWnd = FindWindow(0, windowTitle);
+                hWnd = FindWindow(hWnd, windowTitle);
         ShowWindow(hWnd, SW_SHOW);
         SetForegroundWindow(hWnd);
     }

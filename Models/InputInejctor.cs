@@ -2,17 +2,20 @@
 using ReisProduction.Winjoys.Utilities.Enums;
 using ReisProduction.Windelay.Utilities;
 using ReisProduction.Winjoys.Utilities;
+using Windows.System;
 namespace ReisProduction.Winjoys.Models;
 public static partial class InputInjector
 {
-    public static Action<KybdAction> ActionHandler { get; set; } = SendGameInput;
     public static async Task HandleInputs(params IInputAction[] actions)
     {
         foreach (var action in actions)
             switch (action)
             {
-                case KybdAction kybd:
-                    await HandleKeys(kybd);
+                case IKybdAction<VirtualKey> kybd:
+                    await HandleKeys((KybdAction<VirtualKey>)(object)kybd);
+                    break;
+                case IKybdAction<WinRTKey> kybd:
+                    await HandleKeys((KybdAction<WinRTKey>)(object)kybd);
                     break;
                 case ButtonAction btn:
                     await HandleButtons(btn);
@@ -23,11 +26,22 @@ public static partial class InputInjector
                 case MoveAction move:
                     await HandleMoves(move);
                     break;
+                case GamepadAction gp:
+                    await HandleGamepad(gp);
+                    break;
+                case TouchAction touch:
+                    await HandleTouch(touch);
+                    break;
             }
     }
-    public static async Task HandleKeys(KybdAction kybdAction)
+    public static async Task HandleKeys<T>(KybdAction<T> kybdAction)
     {
-        ActionHandler(kybdAction);
+        if (typeof(T) == typeof(VirtualKey))
+            ActionHandler((KybdAction<VirtualKey>)(object)kybdAction);
+        else if (typeof(T) == typeof(WinRTKey))
+            SendWinRTKeys((KybdAction<WinRTKey>)(object)kybdAction);
+        else
+            throw new NotSupportedException("The provided key type is not supported.");
         await Task.CompletedTask;
     }
     public static async Task HandleButtons(ButtonAction buttonAction)
@@ -110,7 +124,9 @@ public static partial class InputInjector
                     break;
             }
     }
-    public static async Task PressKeys(KybdAction kybdAction, DelayAction delayAction)
+    public static async Task HandleGamepad(GamepadAction gamepadAction) => await Task.Run(() => SendGamepadInput(gamepadAction));
+    public static async Task HandleTouch(TouchAction touchAction) => await Task.Run(() => SendTouchInput(touchAction));
+    public static async Task PressKeys<T>(KybdAction<T> kybdAction, DelayAction delayAction)
     {
         var states = new bool[kybdAction.Keys.Length];
         Array.Fill(states, true);
@@ -130,20 +146,6 @@ public static partial class InputInjector
     public static async Task HandleInputSequence(InputSequence sequence)
     {
         foreach (var step in sequence.Steps)
-            switch (step.Action)
-            {
-                case KybdAction kybd:
-                    await PressKeys(kybd, step.Delay!);
-                    break;
-                case ButtonAction button:
-                    await PressButtons(button, step.Delay!);
-                    break;
-                case ScrollAction scroll:
-                    await HandleScrolls(scroll);
-                    break;
-                case MoveAction move:
-                    await HandleMoves(move);
-                    break;
-            }
+            await HandleInputs(step.Action);
     }
 }
