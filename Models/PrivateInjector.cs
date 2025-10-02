@@ -1,38 +1,10 @@
 ﻿using static ReisProduction.Winjoys.Utilities.Constants;
 using static ReisProduction.Winjoys.Services.Interop;
 using ReisProduction.Winjoys.Utilities.Structs;
-using Windows.UI.Input.Preview.Injection;
-using ReisProduction.Winjoys.Utilities;
 using System.Runtime.InteropServices;
-using Windows.Graphics;
-using Windows.System;
 namespace ReisProduction.Winjoys.Models;
 public static partial class InputInjector
 {
-    public static Action<KybdAction<VirtualKey>> ActionHandler { get; set; } = SendGameInput;
-    public static SizeInt32 ScreenSize { get; set; } = new(1920, 1080);
-    public static bool BringToFrontWindow { get; set; } = false;
-    public static uint TimeOffsetInMilliseconds { get; set; } = 0;
-    public static ulong PerformanceCount { get; set; } = 1;
-    public static int PixelsPerStepDelay { get; set; } = 23;
-    public static int PerStepTimeDelay { get; set; } = 1;
-    public static int SmoothDurationMs { get; set; } = 9;
-    public static int Pressure { get; set; } = 32000;
-    public static int Orientation { get; set; } = 90;
-    public static uint TouchPointerId { get; set; } = 0;
-    public static uint PenPointerId { get; set; } = 0;
-    public static InjectedInputTouchParameters TouchParameters =>
-        InjectedInputTouchParameters.Contact |
-        InjectedInputTouchParameters.Orientation |
-        InjectedInputTouchParameters.Pressure;
-    public static InjectedInputRectangle Contact =>
-    new()
-    {
-        Top = -2,
-        Bottom = 2,
-        Left = -2,
-        Right = 2
-    };
     private static char ApplyShiftToNonLetter(char c) => c switch
     {
         '1' => '!',

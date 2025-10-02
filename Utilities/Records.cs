@@ -1,8 +1,9 @@
-﻿using ReisProduction.Winjoys.Utilities.Structs;
-using ReisProduction.Winjoys.Utilities.Enums;
+﻿#if WINUI || WINDOWS_APP || WINRT
 using Windows.UI.Input.Preview.Injection;
-using ReisProduction.Windelay.Utilities;
 using Windows.Gaming.Input;
+#endif
+using ReisProduction.Winjoys.Utilities.Enums;
+using ReisProduction.Windelay.Utilities;
 using Windows.Graphics;
 namespace ReisProduction.Winjoys.Utilities;
 public record InputSequence(IReadOnlyList<InputStep> Steps);
@@ -32,6 +33,15 @@ public record MoveAction(
     MoveType[] Moves,
     PointInt32[] CursorPoints
 ) : IMoveAction;
+#if WINUI || WINDOWS_APP || WINRT
+public record MouseAction(
+    InjectedInputMouseOptions[] Options,
+    uint[] MouseData,
+    int[] DeltaX,
+    int[] DeltaY,
+    nint WindowhWnd = 0,
+    string WindowTitle = ""
+) : IMouseAction;
 public record GamepadAction(
     GamepadButtons Buttons,
     byte LeftTrigger = 0,
@@ -62,3 +72,4 @@ public record TouchAction(
     nint WindowhWnd = 0,
     string WindowTitle = ""
 ) : ITouchAction;
+#endif

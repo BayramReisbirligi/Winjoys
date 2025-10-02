@@ -1,5 +1,4 @@
-﻿using ReisProduction.Winjoys.Utilities.Structs;
-using ReisProduction.Winjoys.Utilities.Enums;
+﻿using ReisProduction.Winjoys.Utilities.Enums;
 using Windows.Gaming.Input;
 using Windows.Graphics;
 using Windows.UI.Input.Preview.Injection;
@@ -14,6 +13,13 @@ public interface IPressAction : IInputAction
 public interface IKybdAction<T> : IPressAction
 {
     T[] Keys { get; }
+}
+public interface IMouseAction : IInputAction
+{
+    InjectedInputMouseOptions[] Options { get; }
+    uint[] MouseData { get; }
+    int[] DeltaX{ get; }
+    int[] DeltaY{ get; }
 }
 public interface IMouseButton : IPressAction
 {

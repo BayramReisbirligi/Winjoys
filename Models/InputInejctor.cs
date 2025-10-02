@@ -26,20 +26,32 @@ public static partial class InputInjector
                 case MoveAction move:
                     await HandleMoves(move);
                     break;
+#if WINUI || WINDOWS_APP || WINRT
+                case MouseAction mouse:
+                    await HandleMouse(mouse);
+                    break;
                 case GamepadAction gp:
                     await HandleGamepad(gp);
                     break;
                 case TouchAction touch:
                     await HandleTouch(touch);
                     break;
+                case PenAction pen:
+                    await HandlePen(pen);
+                    break;
+#endif
+                default:
+                    throw new NotSupportedException("The provided action type is not supported.");
             }
     }
     public static async Task HandleKeys<T>(KybdAction<T> kybdAction)
     {
         if (typeof(T) == typeof(VirtualKey))
             ActionHandler((KybdAction<VirtualKey>)(object)kybdAction);
+#if WINUI || WINDOWS_APP || WINRT
         else if (typeof(T) == typeof(WinRTKey))
             SendWinRTKeys((KybdAction<WinRTKey>)(object)kybdAction);
+#endif
         else
             throw new NotSupportedException("The provided key type is not supported.");
         await Task.CompletedTask;
@@ -124,8 +136,12 @@ public static partial class InputInjector
                     break;
             }
     }
+#if WINUI || WINDOWS_APP || WINRT
+    public static async Task HandleMouse(MouseAction mouseAction) => await Task.Run(() => SendMouseInput(mouseAction));
     public static async Task HandleGamepad(GamepadAction gamepadAction) => await Task.Run(() => SendGamepadInput(gamepadAction));
     public static async Task HandleTouch(TouchAction touchAction) => await Task.Run(() => SendTouchInput(touchAction));
+    public static async Task HandlePen(PenAction penAction) => await Task.Run(() => SendPenInput(penAction));
+#endif
     public static async Task PressKeys<T>(KybdAction<T> kybdAction, DelayAction delayAction)
     {
         var states = new bool[kybdAction.Keys.Length];

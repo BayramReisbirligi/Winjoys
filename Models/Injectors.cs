@@ -1,19 +1,66 @@
-﻿using Injector = Windows.UI.Input.Preview.Injection.InputInjector;
+﻿#if WINUI || WINDOWS_APP || WINRT
+using Injector = Windows.UI.Input.Preview.Injection.InputInjector;
+using Windows.UI.Input.Preview.Injection;
+#endif
 using static ReisProduction.Winjoys.Utilities.Constants;
 using static ReisProduction.Winjoys.Services.Interop;
 using ReisProduction.Winjoys.Utilities.Structs;
-using ReisProduction.Winjoys.Utilities.Enums;
-using Windows.UI.Input.Preview.Injection;
 using ReisProduction.Winjoys.Utilities;
 using System.Runtime.InteropServices;
 using Windows.System;
 namespace ReisProduction.Winjoys.Models;
 public static partial class InputInjector
 {
-    public static void SendWinRTKeys(KybdAction<WinRTKey> kybdAction)
+#if WINUI || WINDOWS_APP || WINRT
+    /// <summary>
+    /// Windows.UI.Input.Preview.Injection.InputInjector instance.
+    /// </summary>
+    public static Injector WinRTInjector { get; set; } = null!;
+    /// <summary>
+    /// Performance count for touch and pen input. Default is 1.
+    /// </summary>
+    public static ulong PerformanceCount { get; set; } = 1;
+    /// <summary>
+    /// Time offset in milliseconds for touch and pen input. Default is 0.
+    /// </summary>
+    public static uint TimeOffsetInMilliseconds { get; set; } = 0;
+    /// <summary>
+    /// Pressure for touch input. Default is 32000.
+    /// </summary>
+    public static int Pressure { get; set; } = 32000;
+    /// <summary>
+    /// Orientation for touch input. Default is 90.
+    /// </summary>
+    public static int Orientation { get; set; } = 90;
+    /// <summary>
+    /// Touch Pointer ID.
+    /// </summary>
+    public static uint TouchPointerId { get; set; } = 0;
+    /// <summary>
+    /// Pen Pointer ID.
+    /// </summary>
+    public static uint PenPointerId { get; set; } = 0;
+    /// <summary>
+    /// Touch Parameters. Default is Contact, Orientation and Pressure.
+    /// </summary>
+    public static InjectedInputTouchParameters TouchParameters =>
+        InjectedInputTouchParameters.Contact |
+        InjectedInputTouchParameters.Orientation |
+        InjectedInputTouchParameters.Pressure;
+    /// <summary>
+    /// Touch contact area. Default is a 4x4 square.
+    /// </summary>
+    public static InjectedInputRectangle Contact =>
+    new()
+    {
+        Top = -2,
+        Bottom = 2,
+        Left = -2,
+        Right = 2
+    };
+    public static void SendWinRTKeys(KybdAction<Utilities.Enums.WinRTKey> kybdAction)
     {
         BringToFrontNameOrHwnd(kybdAction.WindowhWnd, kybdAction.WindowTitle);
-        var injector = Injector.TryCreate();
         List<InjectedInputKeyboardInfo> inputList = [];
         for (int i = 0; i < kybdAction.Keys.Length; i++)
             inputList.Add(new()
@@ -23,8 +70,77 @@ public static partial class InputInjector
                     ? InjectedInputKeyOptions.None
                     : InjectedInputKeyOptions.KeyUp
             });
-        injector.InjectKeyboardInput(inputList);
+        WinRTInjector.InjectKeyboardInput(inputList);
     }
+    public static void SendMouseInput(MouseAction mouseAction)
+    {
+        BringToFrontNameOrHwnd(mouseAction.WindowhWnd, mouseAction.WindowTitle);
+        List<InjectedInputMouseInfo> inputList = [];
+        for (int i = 0; i < mouseAction.Options.Length; i++)
+            inputList.Add(new()
+            {
+                MouseOptions = mouseAction.Options[i],
+                MouseData = mouseAction.MouseData[i],
+                DeltaX = mouseAction.DeltaX[i],
+                DeltaY = mouseAction.DeltaY[i],
+                TimeOffsetInMilliseconds = TimeOffsetInMilliseconds
+            });
+        WinRTInjector.InjectMouseInput(inputList);
+    }
+    public static void SendGamepadInput(GamepadAction gamepadAction)
+    {
+        BringToFrontNameOrHwnd(gamepadAction.WindowhWnd, gamepadAction.WindowTitle);
+        InjectedInputGamepadInfo input = new()
+        {
+            Buttons = gamepadAction.Buttons,
+            LeftTrigger = gamepadAction.LeftTrigger,
+            RightTrigger = gamepadAction.RightTrigger,
+            LeftThumbstickX = gamepadAction.LeftThumbstickX,
+            LeftThumbstickY = gamepadAction.LeftThumbstickY,
+            RightThumbstickX = gamepadAction.RightThumbstickX,
+            RightThumbstickY = gamepadAction.RightThumbstickY
+        };
+        WinRTInjector.InjectGamepadInput(input);
+    }
+    public static void SendTouchInput(TouchAction touchAction)
+    {
+        WinRTInjector.InjectTouchInput([new()
+        {
+            PointerInfo = new()
+            {
+                PointerId = TouchPointerId,
+                PixelLocation = touchAction.Point,
+                PointerOptions = touchAction.Options,
+                PerformanceCount = PerformanceCount,
+                TimeOffsetInMilliseconds = TimeOffsetInMilliseconds
+            },
+            TouchParameters = TouchParameters,
+            Orientation = Orientation,
+            Pressure = Pressure,
+            Contact = Contact
+        }]);
+    }
+    public static void SendPenInput(PenAction penAction)
+    {
+        WinRTInjector.InjectPenInput(new()
+        {
+            PointerInfo = new()
+            {
+                PointerId = PenPointerId,
+                PixelLocation = penAction.Point,
+                PointerOptions = penAction.Options,
+                PerformanceCount = PerformanceCount,
+                TimeOffsetInMilliseconds = TimeOffsetInMilliseconds
+            },
+            Pressure = penAction.Pressure,
+            TiltX = penAction.TiltX,
+            TiltY = penAction.TiltY,
+            Rotation = penAction.Rotation,
+            PenButtons = penAction.PenButtons,
+            PenParameters = penAction.PenParameters
+        });
+    }
+#endif
     public static void SendGameInput(KybdAction<VirtualKey> kybdAction)
     {
         BringToFrontNameOrHwnd(kybdAction.WindowhWnd, kybdAction.WindowTitle);
@@ -108,61 +224,5 @@ public static partial class InputInjector
     {
         BringToFrontNameOrHwnd(windowhWnd, windowTitle);
         System.Windows.Forms.SendKeys.SendWait(keys);
-    }
-    public static void SendGamepadInput(GamepadAction gamepadAction)
-    {
-        BringToFrontNameOrHwnd(gamepadAction.WindowhWnd, gamepadAction.WindowTitle);
-        var injector = Injector.TryCreate();
-        InjectedInputGamepadInfo input = new()
-        {
-            Buttons = gamepadAction.Buttons,
-            LeftTrigger = gamepadAction.LeftTrigger,
-            RightTrigger = gamepadAction.RightTrigger,
-            LeftThumbstickX = gamepadAction.LeftThumbstickX,
-            LeftThumbstickY = gamepadAction.LeftThumbstickY,
-            RightThumbstickX = gamepadAction.RightThumbstickX,
-            RightThumbstickY = gamepadAction.RightThumbstickY
-        };
-        injector.InjectGamepadInput(input);
-    }
-    public static void SendTouchInput(TouchAction touchAction)
-    {
-        var injector = Injector.TryCreate();
-        injector.InjectTouchInput([new()
-        {
-            PointerInfo = new()
-            {
-                PointerId = TouchPointerId,
-                PixelLocation = touchAction.Point,
-                PointerOptions = touchAction.Options,
-                PerformanceCount = PerformanceCount,
-                TimeOffsetInMilliseconds = TimeOffsetInMilliseconds
-            },
-            TouchParameters = TouchParameters,
-            Orientation = Orientation,
-            Pressure = Pressure,
-            Contact = Contact
-        }]);
-    }
-    public static void SendPenInput(PenAction penAction)
-    {
-        var injector = Injector.TryCreate();
-        injector.InjectPenInput(new()
-        {
-            PointerInfo = new()
-            {
-                PointerId = PenPointerId,
-                PixelLocation = penAction.Point,
-                PointerOptions = penAction.Options,
-                PerformanceCount = PerformanceCount,
-                TimeOffsetInMilliseconds = TimeOffsetInMilliseconds
-            },
-            Pressure = penAction.Pressure,
-            TiltX = penAction.TiltX,
-            TiltY = penAction.TiltY,
-            Rotation = penAction.Rotation,
-            PenButtons = penAction.PenButtons,
-            PenParameters = penAction.PenParameters
-        });
     }
 }
