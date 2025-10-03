@@ -206,4 +206,5 @@ public static partial class InputInjector
                 MouseMoveRelative(moveX, moveY);
             await Task.Delay(PerStepTimeDelay);
         }
-    }}
+    }
+}
